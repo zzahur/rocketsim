@@ -62,7 +62,7 @@
 </div>
 
 <p>Predicted Final Velocity: <span id="finalV">0</span> m/s</p>
-<p>Burn Time: <span id="burnTime">0</span> s</p>
+<p>Burn Time: <span id="burnTime">0</span>s</p>
 
 <canvas id="velocityChart" width="600" height="300"></canvas>
 <canvas id="thrustChart" width="600" height="300"></canvas>
@@ -70,11 +70,11 @@
 
 <script>
 let m0 = 1000; // kg 
-let fuelMass = 500; // kg <-- CHANGED from const to let
+let fuelMass = 500; // kg 
 let ve = 3000; // m/s
 let beta = 5; // kg/s
 const dt = 0.1; // time step
-const tMax = 500; // maximum simulation time in seconds
+const tMax = 500; // maximum simulation time in seconds 
 
 const velocityCtx = document.getElementById('velocityChart').getContext('2d');
 const thrustCtx = document.getElementById('thrustChart').getContext('2d');
@@ -84,20 +84,28 @@ let rocketX = 50;
 let currentRocketVelocity = 0; 
 let animationFrameId; 
 
-// Particle system variables (unchanged)
+// Particle system variables
 const particles = [];
 const maxParticles = 200; 
 const particleLife = 60; 
 const particleSize = 3; 
 
-// Initialize Charts (unchanged)
+// Initialize Charts
 let velocityChart = new Chart(velocityCtx, {
   type: 'line',
   data: {labels: [], datasets:[{label:'Velocity (m/s)', data:[], borderColor:'blue', fill:false}]},
   options: {
     responsive:true,
     scales:{
-      x:{title:{display:true,text:'Time (s)'}, ticks:{callback: function(value) { return Number(value/10).toFixed(0); }}},
+      x:{
+          title:{display:true,text:'Time (s)'},
+          ticks: {
+              // FIX: Re-enable callback to force integers (no decimals)
+              callback: function(value, index, values) {
+                  return Number(value/10).toFixed(0); 
+              }
+          }
+      }, 
       y:{title:{display:true,text:'Velocity (m/s)'}}
     }
   }
@@ -109,7 +117,15 @@ let thrustChart = new Chart(thrustCtx, {
   options: {
     responsive:true,
     scales:{
-      x:{title:{display:true,text:'Time (s)'}, ticks:{callback: function(value) { return Number(value/10).toFixed(0); }}},
+      x:{
+          title:{display:true,text:'Time (s)'},
+          ticks: {
+              // FIX: Re-enable callback to force integers (no decimals)
+              callback: function(value, index, values) {
+                  return Number(value/10).toFixed(0); 
+              }
+          }
+      }, 
       y:{title:{display:true,text:'Thrust (N)'}}
     }
   }
@@ -129,7 +145,7 @@ function simulateRocket() {
   let thrustData = [];
     let engine_on = true;
 
-  // 1. Simulation Loop (Engine ON)
+  // 1. Simulation Loop (Engine ON / Coasting)
   while (t <= tMax) {
         let thrust = 0;
         let dv = 0;
@@ -143,24 +159,17 @@ function simulateRocket() {
 
         // Check for Engine Cutoff
         if (engine_on && mass <= m0 - fuelMass) {
-            // Cutoff occurred this step, set mass to dry mass
             mass = m0 - fuelMass; 
             engine_on = false;
-        }
-
-        // If engine is off, thrust is 0, velocity remains constant
-        if (!engine_on && t > 0) {
-            thrust = 0;
-            // No acceleration, so velocity remains the same as the last step
         }
         
         t += dt;
 
-        timeData.push(t);
+        // FIX: Push the true time (t), not a scaled value (t * 10)
+        timeData.push(t); 
         velocityData.push(velocity);
         thrustData.push(thrust);
         
-        // Break if we exceed max time
         if (t >= tMax) break;
   }
     
@@ -168,7 +177,6 @@ function simulateRocket() {
     const finalMass = m0 - fuelMass;
     let burnTime = fuelMass / beta;
     
-    // If burn time exceeds max simulation time, cap it.
     if (burnTime > tMax) {
         burnTime = tMax;
         document.getElementById('burnTime').textContent = `>${tMax.toFixed(1)} s (Fuel not depleted)`;
@@ -186,11 +194,10 @@ function simulateRocket() {
   thrustChart.data.datasets[0].data = thrustData;
   thrustChart.update();
 
-    // Reset rocket position for new animation
     rocketX = 50; 
     currentRocketVelocity = 0;
     particles.length = 0; 
-    animateRocket(velocityData, burnTime); // Pass burn time to animation
+    animateRocket(velocityData, burnTime); 
 }
 
 // Draw a simple rocket (oriented horizontally) - Unchanged
@@ -228,9 +235,8 @@ function drawRocket(ctx, x, y) {
 }
 
 
-// Animate Rocket with Exhaust Particles (horizontal movement)
+// Animate Rocket with Exhaust Particles (horizontal movement) - Unchanged
 function animateRocket(velocityData, burnTime, animationTime = 0) {
-    // Determine if the engine is on based on the animation time
     const engineOn = animationTime < burnTime;
 
     if (velocityData.length > 0) {
@@ -242,7 +248,6 @@ function animateRocket(velocityData, burnTime, animationTime = 0) {
 
     rocketCtx.clearRect(0, 0, rocketCtx.canvas.width, rocketCtx.canvas.height);
 
-    // Update rocket position
     rocketX += currentRocketVelocity * 0.005; 
     if (rocketX > rocketCtx.canvas.width - 100) rocketX = rocketCtx.canvas.width - 100; 
     
@@ -287,7 +292,6 @@ function animateRocket(velocityData, burnTime, animationTime = 0) {
 
     drawRocket(rocketCtx, rocketX, rocketCenterY); 
 
-    // Continue animation until tMax is reached or particles are all gone
     if (animationTime < tMax || particles.length > 0) {
         animationFrameId = requestAnimationFrame(() => animateRocket(velocityData, burnTime, animationTime + dt));
     } else {
@@ -296,29 +300,23 @@ function animateRocket(velocityData, burnTime, animationTime = 0) {
 }
 
 // --- SLIDER SYNCHRONIZATION AND UPDATES ---
-
-// Global function to update the max value of the fuel slider/input
 function updateFuelMax() {
     const maxFuel = Math.floor(m0 * 0.9);
     const fuelInput = document.getElementById('fuelInput');
     const fuelSlider = document.getElementById('fuelSlider');
     
-    // Update max attributes
     fuelInput.max = maxFuel;
     fuelSlider.max = maxFuel;
 
-    // Check if current fuel mass exceeds the new max
     if (fuelMass > maxFuel) {
         fuelMass = maxFuel;
         fuelInput.value = maxFuel;
         fuelSlider.value = maxFuel;
     }
 
-    // Update display label
     document.getElementById('fuelValue').textContent = fuelMass;
 }
 
-// Setup function for synchronization (Modified to use specific IDs)
 function setupInputSynchronization(variableName, inputId, sliderId, labelId) {
     const input = document.getElementById(inputId);
     const slider = document.getElementById(sliderId);
@@ -327,16 +325,14 @@ function setupInputSynchronization(variableName, inputId, sliderId, labelId) {
     function updateValue(newValue) {
         let value = Number(newValue);
         
-        // Clamp the value based on min/max of the input box
         const min = Number(input.min);
         const max = Number(input.max);
         if (value < min) value = min;
         if (value > max) value = max;
         
-        // Update the global variable
         if (variableName === 'm0') {
             m0 = value;
-            updateFuelMax(); // Recalculate fuel max when m0 changes
+            updateFuelMax();
         } else if (variableName === 'fuelMass') {
             fuelMass = value;
         } else if (variableName === 've') {
@@ -345,7 +341,6 @@ function setupInputSynchronization(variableName, inputId, sliderId, labelId) {
             beta = value;
         }
 
-        // Sync the inputs and label
         input.value = value;
         slider.value = value;
         label.textContent = value;
@@ -368,9 +363,8 @@ setupInputSynchronization('fuelMass', 'fuelInput', 'fuelSlider', 'fuelValue');
 setupInputSynchronization('ve', 'veInput', 'veSlider', 'veValue');
 setupInputSynchronization('beta', 'betaInput', 'betaSlider', 'betaValue');
 
-// Initial setup to correctly set fuel max based on starting m0
+// Initial setup and simulation
 updateFuelMax();
-// Initial Simulation
 simulateRocket();
 </script>
 
