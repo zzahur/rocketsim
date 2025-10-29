@@ -74,7 +74,7 @@ let fuelMass = 500; // kg <-- CHANGED from const to let
 let ve = 3000; // m/s
 let beta = 5; // kg/s
 const dt = 0.1; // time step
-const tMax = 1000; // maximum simulation time in seconds
+const tMax = 500; // maximum simulation time in seconds
 
 const velocityCtx = document.getElementById('velocityChart').getContext('2d');
 const thrustCtx = document.getElementById('thrustChart').getContext('2d');
@@ -97,7 +97,7 @@ let velocityChart = new Chart(velocityCtx, {
   options: {
     responsive:true,
     scales:{
-      x:{title:{display:true,text:'Time (s)'}, ticks:{callback: function(value) { return Number(value).toFixed(0); }}},
+      x:{title:{display:true,text:'Time (s)'}, ticks:{callback: function(value) { return Number(value/10).toFixed(0); }}},
       y:{title:{display:true,text:'Velocity (m/s)'}}
     }
   }
@@ -109,7 +109,7 @@ let thrustChart = new Chart(thrustCtx, {
   options: {
     responsive:true,
     scales:{
-      x:{title:{display:true,text:'Time (s)'}, ticks:{callback: function(value) { return Number(value).toFixed(0); }}},
+      x:{title:{display:true,text:'Time (s)'}, ticks:{callback: function(value) { return Number(value/10).toFixed(0); }}},
       y:{title:{display:true,text:'Thrust (N)'}}
     }
   }
